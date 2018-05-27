@@ -1,37 +1,62 @@
-import React, { Component } from 'react'
+import React, { Component, createElement } from 'react'
 import logo from './logo.svg'
 import './App.css'
+import createSocket, { Sockette } from "sockette-component";
 
-//websocket
-import Websocket from 'react-websocket'
+const Socket = createSocket({
+  Component,
+  createElement
+});
 
 
 class App extends Component {
   state = {
     speech: null,
     endpoint: null,
-    state: null
+    state: null,
+    socket: null
   }
 
-  handleData(data) {
-    let result = JSON.parse(data);
-    this.setState({ speech: result.speech, endpoint: result.endpoint, state: result.state })
-  }
+  onOpen = ev => {
+    console.log("> Connected!", ev);
 
-  onSocketOpen(data) {
-    console.log('Voice OS Socket Connected!!!')
-  }
+  };
+
+  onMessage = ev => {
+    console.log("> Received:", ev.data);
+  };
+
+  onReconnect = ev => {
+    console.log("> Reconnecting...", ev);
+  };
+
+  sendMessage = _ => {
+    // WebSocket available in state!
+    const request = { "speech": "show me some cats", "endpoint": "https://hap2a5df4m.execute-api.us-east-1.amazonaws.com/dev/ping", "state": { "directory": "home" } }
+    console.log("this.state: ", this.state)
+    console.log("ws: ", this.state.socket.send(JSON.stringify(request)))
+  };
 
   render() {
     return (
       <div className="App">
-        speech: <strong>{this.state.speech}</strong>
-        endpoint: <strong>{this.state.endpoint}</strong>
-        state: <strong>{this.state.state}</strong>
+        result: <strong>{this.state.result}</strong>
 
-        <Websocket url='ws://secure-lowlands-10237.herokuapp.com/websocket/'
-          onOpen={this.onSocketOpen.bind(this)}
-          onMessage={this.handleData.bind(this)} />
+
+        <button onClick={this.sendMessage} >Test Bouncer</button>
+
+        <Socket
+          url='ws://secure-lowlands-10237.herokuapp.com/websocket/'
+          // url="ws://localhost:8080/websocket/"
+          getSocket={socket => {
+            this.setState({socket: socket});
+          }}
+          maxAttempts={2}
+          onopen={this.onOpen}
+          onmessage={this.onMessage}
+          onreconnect={this.onReconnect}
+        />
+
       </div>
     );
   }
